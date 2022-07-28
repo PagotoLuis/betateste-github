@@ -1,0 +1,14 @@
+git branch
+//MOSTRA OS PROJETOS E EM QUAL ESTAMOS 
+
+got branch nome 
+//CRIAR UMA NOVA AREA DE TRABALHO
+
+git checkout nome
+//MUDA O ESPAÇO DE TRabalho
+
+git push origin :teste 
+//OS : DELETA BRANCH
+OU
+git branch -D teste
+//DELETA BRANCH 

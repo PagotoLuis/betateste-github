@@ -1,0 +1,11 @@
+$ ssh-keygen -t rsa -b 4096 -C "luisfernandopagoto@gmail.com"
+//CRIA A CHAVE DE ACESSO
+
+git remote add origin https://github.com/PagotoLuis/moduloteste.git
+//ADICIONA UM REPOSITORIO LOCAL AO GIT NA NUVEM
+
+
+
+
+
+

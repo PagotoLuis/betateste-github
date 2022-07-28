@@ -1,0 +1,75 @@
+git config --global user.name "Luis Pagoto" //SETA O USUARIO QUE VAI MOTIFICAR O REPOSITORIO
+git config --global user.email "152645@upf.br"
+
+git config --list 
+//LISTA OS USUARIO
+
+git init 
+//INICIA UM REPOSITORIO
+
+
+$ ssh-keygen -t rsa -b 4096 -C "luisfernandopagoto@gmail.com"
+//CRIA A CHAVE DE ACESSO
+
+git remote add origin https://github.com/PagotoLuis/moduloteste.git
+//ADICIONA UM REPOSITORIO LOCAL AO GIT NA NUVEM
+
+
+git branch
+//MOSTRA OS PROJETOS E EM QUAL ESTAMOS 
+
+got branch nome 
+//CRIAR UMA NOVA AREA DE TRABALHO
+
+git checkout nome
+//MUDA O ESPAÇO DE TRabalho
+
+git push origin :teste 
+//OS : DELETA BRANCH
+OU
+git branch -D teste
+//DELETA BRANCH 
+
+git remote
+git fetch //busca do servidor para o local
+git push origin master //envia do local para o servidor
+git pull origin master //envia do servidor para o local
+
+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
+
+criar arquivo readme.md 
+//DESCRIÇÃO DO PROJETO
+
+git status
+ //VERIFICA STATUS
+
+git add -A 
+//ADICIONA OS ARQUIVOS QUE SERÃO SALVOS
+
+git commit -m "Primeiro Commit" 
+//FAZ ALTERAÇÕES E ENVIA PARA O GIT COM DESCRIÇÃO DO QUE FOI FEITO
+
+git log 
+//MOSTRA OS COMMIT FEITOS
+
+
+git reset --soft //VOLTA PRO ESTADO COM AS ALTERAÇÕES SÓ QUE NÃO COMITADAS
+	  --mixer //VOLTA PRO ESTADO SÓ QUE NÃO VAI TAR PREPARADOO VAI TER QUE DAR O ADD
+	  --hard //VAI DELETAR TUDO QUE ESTAVA ANTES E VAI VOLTAR PARA O ESTADO INICIAL 
+//VOLTAR UMA VESÃO ANTERIOR
+
+git diff
+//DETALHA O QUE FOI FEITO
+
+criar .gitignore E ADICIONAR ARQUIVOS OU EXTENSÕES
+//ISSO SERA IGNORADO NO GIT
+
+
+criar token
+gerar token no navegador para acesso e configurar no debia com o comando:
+git config --global --unset credential.helper
+
+
+
+
+

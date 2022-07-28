@@ -1,0 +1,6 @@
+git remote
+git fetch //busca do servidor para o local
+git push origin master //envia do local para o servidor
+git pull origin master //envia do servidor para o local
+
+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
