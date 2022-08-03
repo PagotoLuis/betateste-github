@@ -1,0 +1,23 @@
+
+#exemplo# -> drwxr-xr-x
+
+##1 parte - indica diretorio ou arquivo
+##2 parte -> rwx -> permissoes do dono do diretorio (leitura, gravacao, execucao)
+##4 parte -> r-x -> permissoes do grupo do diretorio (leitura, nao, executar)
+##7 parte -> r-x -> permissoes para demais usuarios (leitura, nao, executar)
+
+#altera o dono de um diretorio
+chown debora:GRP_ADM /adm/
+
+#listar permissoes
+ls -l
+
+#leitura = 4
+#gravacao = 2
+#execução = 1
+
+#soma = rwx = 7
+
+#alterando as permissoes do grupo
+chmod 750 /adm/
+ 

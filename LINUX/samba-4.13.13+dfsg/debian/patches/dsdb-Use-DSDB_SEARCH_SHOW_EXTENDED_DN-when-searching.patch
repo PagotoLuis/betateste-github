@@ -1,0 +1,63 @@
+From dd679ce7f4450765274b085bbee97d1fa8e0f2a0 Mon Sep 17 00:00:00 2001
+From: Andrew Bartlett <abartlet@samba.org>
+Date: Fri, 12 Nov 2021 12:44:44 +1300
+Subject: [PATCH 298/314] dsdb: Use DSDB_SEARCH_SHOW_EXTENDED_DN when searching
+ for the local replicated object
+
+This may allow further processing when the DN normalisation has changed
+which changes the indexing, such as seen after fixes for bug 14656.
+
+BUG: https://bugzilla.samba.org/show_bug.cgi?id=14656
+BUG: https://bugzilla.samba.org/show_bug.cgi?id=14902
+
+Signed-off-by: Andrew Bartlett <abartlet@samba.org>
+Reviewed-by: Stefan Metzmacher <metze@samba.org>
+(cherry picked from commit f621317e3b25a8925ab6e448068264488a0a47c7)
+
+Autobuild-User(v4-13-test): Stefan Metzmacher <metze@samba.org>
+Autobuild-Date(v4-13-test): Wed Dec  8 16:49:25 UTC 2021 on sn-devel-184
+---
+ source4/dsdb/samdb/ldb_modules/operational.c    |  2 +-
+ source4/dsdb/samdb/ldb_modules/repl_meta_data.c | 13 ++++++++++++-
+ 2 files changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/source4/dsdb/samdb/ldb_modules/operational.c b/source4/dsdb/samdb/ldb_modules/operational.c
+index 5eaebf98141..4e60feaf14f 100644
+--- a/source4/dsdb/samdb/ldb_modules/operational.c
++++ b/source4/dsdb/samdb/ldb_modules/operational.c
+@@ -1399,7 +1399,7 @@ static const struct op_attributes_replace search_sub[] = {
+ 	{ "tokenGroups", "primaryGroupID", objectSid_attr, construct_token_groups },
+ 	{ "tokenGroupsNoGCAcceptable", "primaryGroupID", objectSid_attr, construct_token_groups_no_gc},
+ 	{ "tokenGroupsGlobalAndUniversal", "primaryGroupID", objectSid_attr, construct_global_universal_token_groups },
+-	{ "parentGUID", NULL, NULL, construct_parent_guid },
++	{ "parentGUID", "objectGUID", NULL, construct_parent_guid },
+ 	{ "subSchemaSubEntry", NULL, NULL, construct_subschema_subentry },
+ 	{ "msDS-isRODC", "objectClass", objectCategory_attr, construct_msds_isrodc },
+ 	{ "msDS-KeyVersionNumber", "replPropertyMetaData", NULL, construct_msds_keyversionnumber },
+diff --git a/source4/dsdb/samdb/ldb_modules/repl_meta_data.c b/source4/dsdb/samdb/ldb_modules/repl_meta_data.c
+index 58c04da5f53..870185ee1d3 100644
+--- a/source4/dsdb/samdb/ldb_modules/repl_meta_data.c
++++ b/source4/dsdb/samdb/ldb_modules/repl_meta_data.c
+@@ -6923,7 +6923,18 @@ static int replmd_replicated_apply_next(struct replmd_replicated_request *ar)
+ 				   ar->req);
+ 	LDB_REQ_SET_LOCATION(search_req);
+ 
+-	ret = dsdb_request_add_controls(search_req, DSDB_SEARCH_SHOW_RECYCLED);
++	/*
++	 * We set DSDB_SEARCH_SHOW_EXTENDED_DN to get the GUID on the
++	 * DN.  This in turn helps our operational module find the
++	 * record by GUID, not DN lookup which is more error prone if
++	 * DN indexing changes.  We prefer to keep chasing GUIDs
++	 * around if possible, even within a transaction.
++	 *
++	 * The aim here is to keep replication moving and allow a
++	 * reindex later.
++	 */
++	ret = dsdb_request_add_controls(search_req, DSDB_SEARCH_SHOW_RECYCLED
++					|DSDB_SEARCH_SHOW_EXTENDED_DN);
+ 
+ 	if (ret != LDB_SUCCESS) {
+ 		return ret;
+-- 
+2.30.2
+

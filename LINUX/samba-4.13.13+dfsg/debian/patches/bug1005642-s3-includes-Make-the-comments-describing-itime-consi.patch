@@ -1,0 +1,60 @@
+From 9904bcf0b2dfa234abe85796ce54e5de602b1988 Mon Sep 17 00:00:00 2001
+From: Jones Syue <jonessyue@qnap.com>
+Date: Mon, 10 Jan 2022 09:29:44 -0800
+Subject: [PATCH 4/4] s3: includes: Make the comments describing itime
+ consistent. Always use "invented" time.
+
+It gets confusing if we call it "imaginary" or "instantiation"
+in different places.
+
+BUG: https://bugzilla.samba.org/show_bug.cgi?id=14928
+
+Signed-off-by: Jones Syue <jonessyue@qnap.com>
+Reviewed-by: Jeremy Allison <jra@samba.org>
+Reviewed-by: Ralph Boehme <slow@samba.org>
+
+Autobuild-User(master): Jeremy Allison <jra@samba.org>
+Autobuild-Date(master): Mon Jan 10 18:42:02 UTC 2022 on sn-devel-184
+
+(cherry picked from commit 745af26a1a6531b2e906aa7c1c0355cbab658441)
+
+Autobuild-User(v4-14-test): Jule Anger <janger@samba.org>
+Autobuild-Date(v4-14-test): Wed Jan 12 12:26:56 UTC 2022 on sn-devel-184
+---
+ source3/include/includes.h | 4 ++--
+ source3/lib/system.c       | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/source3/include/includes.h b/source3/include/includes.h
+index 8fa65cc3122..b35108b6c8f 100644
+--- a/source3/include/includes.h
++++ b/source3/include/includes.h
+@@ -209,10 +209,10 @@ struct stat_ex {
+ 	struct timespec st_ex_ctime;
+ 	struct timespec st_ex_btime; /* birthtime */
+ 	/*
+-	 * Immutable original birth time aka instantiation time. Set when a file
++	 * Immutable original birth time aka invented time. Set when a file
+ 	 * is created, never changes thereafter. May not be set by the client.
+ 	 */
+-	struct timespec st_ex_itime; /* instantiation time */
++	struct timespec st_ex_itime; /* invented time */
+ 
+ 	blksize_t	st_ex_blksize;
+ 	blkcnt_t	st_ex_blocks;
+diff --git a/source3/lib/system.c b/source3/lib/system.c
+index cd20b7c5eaf..afc48e0d30d 100644
+--- a/source3/lib/system.c
++++ b/source3/lib/system.c
+@@ -428,7 +428,7 @@ void init_stat_ex_from_stat (struct stat_ex *dst,
+ }
+ 
+ /*******************************************************************
+- Create a clock-derived itime (imaginary) time. Used to generate
++ Create a clock-derived itime (invented) time. Used to generate
+  the fileid.
+ ********************************************************************/
+ 
+-- 
+2.30.2
+

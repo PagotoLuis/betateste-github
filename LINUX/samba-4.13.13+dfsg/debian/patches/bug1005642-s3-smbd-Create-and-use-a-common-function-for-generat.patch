@@ -1,0 +1,139 @@
+From 18916136e42ce42b19623c1861afbddf1a7d452f Mon Sep 17 00:00:00 2001
+From: Jeremy Allison <jra@samba.org>
+Date: Wed, 5 Jan 2022 11:40:46 -0800
+Subject: [PATCH 2/4] s3: smbd: Create and use a common function for generating
+ a fileid - create_clock_itime().
+
+This first gets the clock_gettime_mono() value, converts to an NTTIME (as
+this is what is stored in the dos attribute EA), then mixes in 8 bits of
+randomness shifted up by 55 bits to cope with poor resolution clocks to
+avoid duplicate inodes.
+
+Using 8 bits of randomness on top of an NTTIME gives us around 114
+years headroom. We can now guarentee returning a itime-based
+fileid in a normal share (storing dos attributes in an EA).
+
+Remove knownfail.d/fileid-unique
+
+BUG: https://bugzilla.samba.org/show_bug.cgi?id=14928
+
+Signed-off-by: Jeremy Allison <jra@samba.org>
+Reviewed-by: Christof Schmitt <cs@samba.org>
+
+Autobuild-User(master): Jeremy Allison <jra@samba.org>
+Autobuild-Date(master): Sat Jan  8 06:35:22 UTC 2022 on sn-devel-184
+
+(cherry picked from commit 23fbf0bad0332a0ae0d4dc3c8f6df6e7ec46b88b)
+---
+ source3/include/proto.h |  1 +
+ source3/lib/system.c    | 52 +++++++++++++++++++++++++++++++++++++++++
+ source3/smbd/open.c     |  6 ++---
+ 3 files changed, 56 insertions(+), 3 deletions(-)
+
+diff --git a/source3/include/proto.h b/source3/include/proto.h
+index de5d1be5208..4f977942084 100644
+--- a/source3/include/proto.h
++++ b/source3/include/proto.h
+@@ -230,6 +230,7 @@ void update_stat_ex_create_time(struct stat_ex *dst, struct timespec create_time
+ void update_stat_ex_file_id(struct stat_ex *dst, uint64_t file_id);
+ void update_stat_ex_from_saved_stat(struct stat_ex *dst,
+ 				    const struct stat_ex *src);
++void create_clock_itime(struct stat_ex *dst);
+ int sys_stat(const char *fname, SMB_STRUCT_STAT *sbuf,
+ 	     bool fake_dir_create_times);
+ int sys_fstat(int fd, SMB_STRUCT_STAT *sbuf,
+diff --git a/source3/lib/system.c b/source3/lib/system.c
+index f1265e0c43f..1a513020c57 100644
+--- a/source3/lib/system.c
++++ b/source3/lib/system.c
+@@ -427,6 +427,58 @@ void init_stat_ex_from_stat (struct stat_ex *dst,
+ 	dst->st_ex_iflags |= ST_EX_IFLAG_CALCULATED_FILE_ID;
+ }
+ 
++/*******************************************************************
++ Create a clock-derived itime (imaginary) time. Used to generate
++ the fileid.
++********************************************************************/
++
++void create_clock_itime(struct stat_ex *dst)
++{
++	NTTIME tval;
++	struct timespec itime;
++	uint64_t mixin;
++	uint8_t rval;
++
++	/* Start with the system clock. */
++	clock_gettime_mono(&itime);
++
++	/* Convert to NTTIME. */
++	tval = unix_timespec_to_nt_time(itime);
++
++	/*
++	 * In case the system clock is poor granularity
++	 * (happens on VM or docker images) then mix in
++	 * 8 bits of randomness.
++	 */
++	generate_random_buffer((unsigned char *)&rval, 1);
++	mixin = rval;
++
++	/*
++	 * Shift up by 55 bits. This gives us approx 114 years
++	 * of headroom.
++	 */
++	mixin <<= 55;
++
++	/* And OR into the nttime. */
++	tval |= mixin;
++
++	/*
++	 * Convert to a unix timespec, ignoring any
++	 * constraints on seconds being higher than
++	 * TIME_T_MAX or lower than TIME_T_MIN. These
++	 * are only needed to allow unix display time functions
++	 * to work correctly, and this is being used to
++	 * generate a fileid. All we care about is the
++	 * NTTIME being valid across all NTTIME ranges
++	 * (which we carefully ensured above).
++	 */
++
++	itime = nt_time_to_unix_timespec_raw(tval);
++
++	/* And set as a generated itime. */
++	update_stat_ex_itime(dst, itime);
++}
++
+ /*******************************************************************
+ A stat() wrapper.
+ ********************************************************************/
+diff --git a/source3/smbd/open.c b/source3/smbd/open.c
+index ef158657684..f7646f98b33 100644
+--- a/source3/smbd/open.c
++++ b/source3/smbd/open.c
+@@ -4134,13 +4134,13 @@ static NTSTATUS open_file_ntcreate(connection_struct *conn,
+ 	 * If we created a file and it's not a stream, this is the point where
+ 	 * we set the itime (aka invented time) that get's stored in the DOS
+ 	 * attribute xattr. The value is going to be either what the filesystem
+-	 * provided or a copy of the creation date.
++	 * provided or a generated itime value.
+ 	 *
+ 	 * Either way, we turn the itime into a File-ID, unless the filesystem
+ 	 * provided one (unlikely).
+ 	 */
+ 	if (info == FILE_WAS_CREATED && !is_named_stream(smb_fname)) {
+-		smb_fname->st.st_ex_iflags &= ~ST_EX_IFLAG_CALCULATED_ITIME;
++		create_clock_itime(&smb_fname->st);
+ 
+ 		if (lp_store_dos_attributes(SNUM(conn)) &&
+ 		    smb_fname->st.st_ex_iflags & ST_EX_IFLAG_CALCULATED_FILE_ID)
+@@ -4318,7 +4318,7 @@ static NTSTATUS mkdir_internal(connection_struct *conn,
+ 		return NT_STATUS_NOT_A_DIRECTORY;
+ 	}
+ 
+-	smb_dname->st.st_ex_iflags &= ~ST_EX_IFLAG_CALCULATED_ITIME;
++	create_clock_itime(&smb_dname->st);
+ 
+ 	if (lp_store_dos_attributes(SNUM(conn))) {
+ 		if (smb_dname->st.st_ex_iflags & ST_EX_IFLAG_CALCULATED_FILE_ID)
+-- 
+2.30.2
+

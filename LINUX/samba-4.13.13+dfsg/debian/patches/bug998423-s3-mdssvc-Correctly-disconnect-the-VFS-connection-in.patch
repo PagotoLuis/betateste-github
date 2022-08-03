@@ -1,0 +1,34 @@
+From b00fed3b698cc78a377d71e0574c878e262c4808 Mon Sep 17 00:00:00 2001
+From: Jeremy Allison <jra@samba.org>
+Date: Mon, 23 Aug 2021 17:40:42 -0700
+Subject: [PATCH] s3: mdssvc: Correctly disconnect the VFS connection inside
+ the mds_ctx destructor.
+
+BUG: https://bugzilla.samba.org/show_bug.cgi?id=14809
+
+Signed-off-by: Jeremy Allison <jra@samba.org>
+Reviewed-by: Ralph Boehme <slow@samba.org>
+(cherry picked from commit b4d8c62c4e8191e05fd03dd096a0bc989e224ed3)
+---
+ source3/rpc_server/mdssvc/mdssvc.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/source3/rpc_server/mdssvc/mdssvc.c b/source3/rpc_server/mdssvc/mdssvc.c
+index 715de272d32..a983a882294 100644
+--- a/source3/rpc_server/mdssvc/mdssvc.c
++++ b/source3/rpc_server/mdssvc/mdssvc.c
+@@ -1568,6 +1568,11 @@ static int mds_ctx_destructor_cb(struct mds_ctx *mds_ctx)
+ 	}
+ 	TALLOC_FREE(mds_ctx->ino_path_map);
+ 
++	if (mds_ctx->conn != NULL) {
++		SMB_VFS_DISCONNECT(mds_ctx->conn);
++		conn_free(mds_ctx->conn);
++	}
++
+ 	ZERO_STRUCTP(mds_ctx);
+ 
+ 	return 0;
+-- 
+2.30.2
+

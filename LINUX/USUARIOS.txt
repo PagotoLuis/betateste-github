@@ -1,0 +1,27 @@
+C## cria usuarios
+useradd nando -m -c "Luis Fernando Pagoto" -s /bin/bash
+
+## remove usuarios
+userdel -r -f nando
+
+## troca senha
+passwd nando
+
+## modifica usuario
+usermod
+
+## lista os usuarios
+cat /etc/passwd
+
+## grupos 
+cat /etc/group
+
+## remove de um gupo
+gpasswd -d mariana adm 
+
+## criaa um grupo
+groupadd GRP_ADM
+
+## DELETA GRUPO
+groupdel GRP_TESTE
+

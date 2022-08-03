@@ -1,0 +1,77 @@
+From 43530db58aa8b7cd4e6f5365fd12ab9ee7861c0d Mon Sep 17 00:00:00 2001
+From: Jeremy Allison <jra@samba.org>
+Date: Thu, 6 Jan 2022 13:58:20 -0800
+Subject: [PATCH 1/4] lib: util: Add a function nt_time_to_unix_timespec_raw().
+
+Not yet used. Does no checks on the converted values.
+
+A later cleanup will allow us to move nt_time_to_unix_timespec()
+and nt_time_to_full_timespec() to use common code.
+
+BUG: https://bugzilla.samba.org/show_bug.cgi?id=14928
+
+Signed-off-by: Jeremy Allison <jra@samba.org>
+Reviewed-by: Christof Schmitt <cs@samba.org>
+(cherry picked from commit 29d69c22a0d945193ce3dac27e1083dbc5c53f03)
+---
+ lib/util/time.c | 30 ++++++++++++++++++++++++++++++
+ lib/util/time.h |  2 ++
+ 2 files changed, 32 insertions(+)
+
+diff --git a/lib/util/time.c b/lib/util/time.c
+index 0fac5e2e397..b49d2fa6f30 100644
+--- a/lib/util/time.c
++++ b/lib/util/time.c
+@@ -865,6 +865,36 @@ _PUBLIC_ int get_time_zone(time_t t)
+ 	return tm_diff(&tm_utc,tm);
+ }
+ 
++/*
++ * Raw convert an NTTIME to a unix timespec.
++ */
++
++struct timespec nt_time_to_unix_timespec_raw(
++			NTTIME nt)
++{
++	int64_t d;
++	struct timespec ret;
++
++	d = (int64_t)nt;
++	/* d is now in 100ns units, since jan 1st 1601".
++	   Save off the ns fraction. */
++
++	/*
++	 * Take the last seven decimal digits and multiply by 100.
++	 * to convert from 100ns units to 1ns units.
++	 */
++        ret.tv_nsec = (long) ((d % (1000 * 1000 * 10)) * 100);
++
++	/* Convert to seconds */
++	d /= 1000*1000*10;
++
++	/* Now adjust by 369 years to make the secs since 1970 */
++	d -= TIME_FIXUP_CONSTANT_INT;
++
++	ret.tv_sec = (time_t)d;
++	return ret;
++}
++
+ struct timespec nt_time_to_unix_timespec(NTTIME nt)
+ {
+ 	int64_t d;
+diff --git a/lib/util/time.h b/lib/util/time.h
+index 4a90b40d5ce..6cd5bd4daa2 100644
+--- a/lib/util/time.h
++++ b/lib/util/time.h
+@@ -342,6 +342,8 @@ bool nt_time_equal(NTTIME *t1, NTTIME *t2);
+ 
+ void interpret_dos_date(uint32_t date,int *year,int *month,int *day,int *hour,int *minute,int *second);
+ 
++struct timespec nt_time_to_unix_timespec_raw(NTTIME nt);
++
+ struct timespec nt_time_to_unix_timespec(NTTIME nt);
+ 
+ time_t convert_timespec_to_time_t(struct timespec ts);
+-- 
+2.30.2
+

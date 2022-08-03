@@ -1,0 +1,6 @@
+##listar discos
+lsblk ou fdisk -l
+
+## local dos discos montados
+pico /etc/fstab
+

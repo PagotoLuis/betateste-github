@@ -1,0 +1,46 @@
+From 97dc8c0dcccbcecd3a8f8f3872b47d3a3c6e8036 Mon Sep 17 00:00:00 2001
+From: Jeremy Allison <jra@samba.org>
+Date: Mon, 23 Aug 2021 17:42:40 -0700
+Subject: [PATCH] s3: smbd: In create_conn_struct_cwd(), don't TALLOC_FREE() an
+ unallocated pointer on error.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Just return the status - if create_conn_struct_as_root() fails
+the connection struct never gets returned.
+
+BUG: https://bugzilla.samba.org/show_bug.cgi?id=14809
+
+Signed-off-by: Jeremy Allison <jra@samba.org>
+Reviewed-by: Ralph Boehme <slow@samba.org>
+
+Autobuild-User(master): Ralph Böhme <slow@samba.org>
+Autobuild-Date(master): Wed Aug 25 17:09:23 UTC 2021 on sn-devel-184
+
+(cherry picked from commit 857045f3a236dea125200dd09279d677e513682b)
+---
+ source3/smbd/msdfs.c | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
+
+diff --git a/source3/smbd/msdfs.c b/source3/smbd/msdfs.c
+index 3a1dd11d9eb..3645f5d21d5 100644
+--- a/source3/smbd/msdfs.c
++++ b/source3/smbd/msdfs.c
+@@ -525,12 +525,7 @@ NTSTATUS create_conn_struct_cwd(TALLOC_CTX *mem_ctx,
+ 					    path,
+ 					    session_info);
+ 	unbecome_root();
+-	if (!NT_STATUS_IS_OK(status)) {
+-		TALLOC_FREE(c);
+-		return status;
+-	}
+-
+-	return NT_STATUS_OK;
++	return status;
+ }
+ 
+ static void shuffle_strlist(char **list, int count)
+-- 
+2.30.2
+

@@ -1,0 +1,20 @@
+#opcoes debian
+apt-get 
+#melhor opcao
+apt
+
+#baixar por enderco
+
+wget [endereco]
+
+#descompactar
+
+unzip [file.zip]
+
+#se precisar adicionar outros pacotes
+apt-edit sourcer
+
+#atualizar sistema
+apt update
+apt upgrade -y
+

@@ -1,0 +1,46 @@
+From b7158d4ce853f3ce4342ff9756490104ad163b9c Mon Sep 17 00:00:00 2001
+From: Stefan Metzmacher <metze@samba.org>
+Date: Tue, 9 Nov 2021 20:50:20 +0100
+Subject: [PATCH 289/314] s3:winbindd: fix "allow trusted domains = no"
+ regression
+
+add_trusted_domain() should only reject domains
+based on is_allowed_domain(), which now also
+checks "allow trusted domains = no", if we don't
+have an explicit trust to the domain (SEC_CHAN_NULL).
+
+We use at least SEC_CHAN_LOCAL for local domains like
+BUILTIN.
+
+BUG: https://bugzilla.samba.org/show_bug.cgi?id=14899
+
+Signed-off-by: Stefan Metzmacher <metze@samba.org>
+Reviewed-by: Andreas Schneider <asn@samba.org>
+
+Autobuild-User(master): Stefan Metzmacher <metze@samba.org>
+Autobuild-Date(master): Wed Nov 10 11:21:31 UTC 2021 on sn-devel-184
+
+(cherry picked from commit a7f6c60cb037b4bc9eee276236539b8282213935)
+
+Autobuild-User(v4-13-test): Stefan Metzmacher <metze@samba.org>
+Autobuild-Date(v4-13-test): Thu Nov 11 10:37:06 UTC 2021 on sn-devel-184
+---
+ source3/winbindd/winbindd_util.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/source3/winbindd/winbindd_util.c b/source3/winbindd/winbindd_util.c
+index 1ae4a8d3ca3..a4f33c4765b 100644
+--- a/source3/winbindd/winbindd_util.c
++++ b/source3/winbindd/winbindd_util.c
+@@ -131,7 +131,7 @@ static NTSTATUS add_trusted_domain(const char *domain_name,
+ 		return NT_STATUS_INVALID_PARAMETER;
+ 	}
+ 
+-	if (!is_allowed_domain(domain_name)) {
++	if (secure_channel_type == SEC_CHAN_NULL && !is_allowed_domain(domain_name)) {
+ 		return NT_STATUS_NO_SUCH_DOMAIN;
+ 	}
+ 
+-- 
+2.30.2
+

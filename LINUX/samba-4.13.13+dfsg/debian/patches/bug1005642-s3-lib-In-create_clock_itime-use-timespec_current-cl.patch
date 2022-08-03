@@ -1,0 +1,39 @@
+From 9c237a727a3536f8f9fdde98a943373197d43d20 Mon Sep 17 00:00:00 2001
+From: Jeremy Allison <jra@samba.org>
+Date: Mon, 10 Jan 2022 09:01:09 -0800
+Subject: [PATCH 3/4] s3: lib: In create_clock_itime(), use timespec_current()
+ -> clock_gettime(CLOCK_REALTIME..).
+
+CLOCK_MONOTONIC (which we previously used) is reset
+when the system is rebooted.
+
+CLOCK_REALTIME is a "wall clock" time. It's still affected by NTP
+changes (for Linux we should probably use CLOCK_TAI instead
+but that is Linux-specific). For most systems CLOCK_REALTIME
+will be good enough.
+
+BUG: https://bugzilla.samba.org/show_bug.cgi?id=14928
+
+Signed-off-by: Jeremy Allison <jra@samba.org>
+Reviewed-by: Ralph Boehme <slow@samba.org>
+(cherry picked from commit 920611f0bc98229ac4a5ee127af7f99216075341)
+---
+ source3/lib/system.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/source3/lib/system.c b/source3/lib/system.c
+index 1a513020c57..cd20b7c5eaf 100644
+--- a/source3/lib/system.c
++++ b/source3/lib/system.c
+@@ -440,7 +440,7 @@ void create_clock_itime(struct stat_ex *dst)
+ 	uint8_t rval;
+ 
+ 	/* Start with the system clock. */
+-	clock_gettime_mono(&itime);
++	itime = timespec_current();
+ 
+ 	/* Convert to NTTIME. */
+ 	tval = unix_timespec_to_nt_time(itime);
+-- 
+2.30.2
+

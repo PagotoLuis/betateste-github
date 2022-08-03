@@ -1,0 +1,15 @@
+##copiar
+
+cp
+
+##mover
+
+mv
+
+##processos
+#mostra processos 
+ps aux
+
+#deleta processo
+kill
+killall
